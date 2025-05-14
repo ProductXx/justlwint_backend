@@ -12,12 +12,8 @@ pub fn generate_token(user: AccountInfo) -> Result<String, jsonwebtoken::errors:
     let claims = Claims {
         exp,
         id: user.id,
-        phone_number: user.phone_number,
+        email_address: user.email_address,
         username: user.username,
-        is_driver: user.is_driver,
-        is_owner: user.is_owner,
-        address: user.address,
-        id_approved: user.id_approved,
     };
 
     encode(
