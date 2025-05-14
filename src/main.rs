@@ -1,9 +1,7 @@
 use std::{io, path::Path};
 
 use actix_web::rt;
-use servers::{
-    actix_server::actix_services, axum_server::axum_services, swagger_server::swagger_services,
-};
+use servers::{actix_server::actix_services, axum_server::axum_services};
 use structures::static_vars::{
     CAR_PHOTOS_PATH, CAR_PROOFS_PATH, CITIZEN_ID_PATH, DB, DB_BACKUP_PATH, DRIVER_LICENSE_PATH,
     POST_PICS_PATH, TEMP_FILE_PATH, USER_PHOTOS_PATH,
@@ -86,7 +84,7 @@ async fn main() -> io::Result<()> {
 
     DB.use_ns("fuckkk").use_db("kargate").await.unwrap();
 
-    DB.query(surql_queries()).await.unwrap();
+    // DB.query(surql_queries()).await.unwrap();
 
     init_important_dirs().await?;
 
@@ -94,7 +92,7 @@ async fn main() -> io::Result<()> {
 
     tokio::spawn(axum_services());
 
-    tokio::spawn(swagger_services());
+    // tokio::spawn(swagger_services());
 
     tokio::signal::ctrl_c().await.unwrap();
 
