@@ -8,11 +8,11 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 
-use super::multipart_handlers::{
-    car_form_multipart::car_form_multipath, driver_form_multipart::driver_form_multipath,
-    id_verify_form_multipart::id_verify_form_multipath,
-    package_post_multipart::package_post_multipath,
-};
+// use super::multipart_handlers::{
+//     car_form_multipart::car_form_multipath, driver_form_multipart::driver_form_multipath,
+//     id_verify_form_multipart::id_verify_form_multipath,
+//     package_post_multipart::package_post_multipath,
+// };
 
 pub struct MultipartMiddleware;
 
@@ -52,7 +52,8 @@ where
     }
 
     #[allow(clippy::await_holding_refcell_ref)]
-    fn call(&self, mut req: ServiceRequest) -> Self::Future {
+    // fn call(&self, mut req: ServiceRequest) -> Self::Future {
+    fn call(&self, req: ServiceRequest) -> Self::Future {
         let service = self.service.clone();
 
         Box::pin(async move {
@@ -60,15 +61,15 @@ where
                 return service.call(req).await;
             }
 
-            if req.path().ends_with("/driver_form") {
-                driver_form_multipath(&mut req).await?;
-            } else if req.path().ends_with("/id_verify_form") {
-                id_verify_form_multipath(&mut req).await?;
-            } else if req.path().ends_with("/car_form") {
-                car_form_multipath(&mut req).await?;
-            } else if req.path().ends_with("/package_post") {
-                package_post_multipath(&mut req).await?;
-            }
+            // if req.path().ends_with("/driver_form") {
+            //     driver_form_multipath(&mut req).await?;
+            // } else if req.path().ends_with("/id_verify_form") {
+            //     id_verify_form_multipath(&mut req).await?;
+            // } else if req.path().ends_with("/car_form") {
+            //     car_form_multipath(&mut req).await?;
+            // } else if req.path().ends_with("/package_post") {
+            //     package_post_multipath(&mut req).await?;
+            // }
 
             service.call(req).await
         })
