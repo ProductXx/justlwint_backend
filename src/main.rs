@@ -86,7 +86,7 @@ async fn main() -> io::Result<()> {
 
     DB.use_ns("fuckkk").use_db("kargate").await.unwrap();
 
-    // DB.query(surql_queries()).await.unwrap();
+    DB.query(surql_queries()).await.unwrap();
 
     init_important_dirs().await?;
 
