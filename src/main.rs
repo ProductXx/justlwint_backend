@@ -4,10 +4,10 @@ use actix_web::rt;
 use servers::{
     actix_server::actix_services, axum_server::axum_services, swagger_server::swagger_services,
 };
-// use structures::static_vars::{
-//     CAR_PHOTOS_PATH, CAR_PROOFS_PATH, CITIZEN_ID_PATH, DB, DB_BACKUP_PATH, DRIVER_LICENSE_PATH,
-//     POST_PICS_PATH, TEMP_FILE_PATH, USER_PHOTOS_PATH,
-// };
+use structures::static_vars::{
+    CAR_PHOTOS_PATH, CAR_PROOFS_PATH, CITIZEN_ID_PATH, DB, DB_BACKUP_PATH, DRIVER_LICENSE_PATH,
+    POST_PICS_PATH, TEMP_FILE_PATH, USER_PHOTOS_PATH,
+};
 use surrealdb::{engine::remote::ws::Ws, opt::auth::Root};
 use tokio::fs;
 use tracing::Level;
