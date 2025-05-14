@@ -6,13 +6,13 @@ use tokio::net::TcpListener;
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 
-use crate::websocket_apis::{listen_noti::noti_websocket, newfeeds::newfeeds_websocket};
+// use crate::websocket_apis::{listen_noti::noti_websocket, newfeeds::newfeeds_websocket};
 
 pub async fn axum_services() -> io::Result<()> {
-    let (layer, io) = SocketIo::new_layer();
+    let (layer, _io) = SocketIo::new_layer();
 
-    io.ns("/notification", noti_websocket);
-    io.ns("/newfeeds", newfeeds_websocket);
+    // io.ns("/notification", noti_websocket);
+    // io.ns("/newfeeds", newfeeds_websocket);
 
     let app = Router::new().layer(
         ServiceBuilder::new()
