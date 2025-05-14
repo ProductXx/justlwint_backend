@@ -16,26 +16,28 @@ mod servers;
 mod structures;
 mod websocket_apis;
 
-// fn surql_queries() -> String {
-//     format!(
-//         "{} \n {} \n {} \n {} \n {} \n {} \n {} \n {} \n {} \n {} \n {} \n",
-//         include_str!("surrealql/indexes.surql"),
-//         include_str!("surrealql/user_events/forms/car_form/car_form_status_event.surql"),
-//         include_str!("surrealql/user_events/forms/car_form/relate_car_form_event.surql"),
-//         include_str!("surrealql/user_events/forms/driver_form/driver_form_status_event.surql"),
-//         include_str!("surrealql/user_events/forms/driver_form/relate_driver_form_event.surql"),
-//         include_str!(
-//             "surrealql/user_events/forms/id_verify_form/id_verify_form_status_event.surql"
-//         ),
-//         include_str!(
-//             "surrealql/user_events/forms/id_verify_form/relate_id_verify_form_event.surql"
-//         ),
-//         include_str!("surrealql/user_events/posts/car_post/car_post_status.surql"),
-//         include_str!("surrealql/user_events/posts/car_post/relate_car_post_event.surql"),
-//         include_str!("surrealql/user_events/posts/general.surql"),
-//         include_str!("surrealql/user_events/booking/listen_create_event.surql")
-//     )
-// }
+fn surql_queries() -> String {
+    include_str!("surrealql/indexes.surql").to_owned()
+
+    // format!(
+    //     "{} \n {} \n {} \n {} \n {} \n {} \n {} \n {} \n {} \n {} \n {} \n",
+    //     include_str!("surrealql/indexes.surql"),
+    //     include_str!("surrealql/user_events/forms/car_form/car_form_status_event.surql"),
+    //     include_str!("surrealql/user_events/forms/car_form/relate_car_form_event.surql"),
+    //     include_str!("surrealql/user_events/forms/driver_form/driver_form_status_event.surql"),
+    //     include_str!("surrealql/user_events/forms/driver_form/relate_driver_form_event.surql"),
+    //     include_str!(
+    //         "surrealql/user_events/forms/id_verify_form/id_verify_form_status_event.surql"
+    //     ),
+    //     include_str!(
+    //         "surrealql/user_events/forms/id_verify_form/relate_id_verify_form_event.surql"
+    //     ),
+    //     include_str!("surrealql/user_events/posts/car_post/car_post_status.surql"),
+    //     include_str!("surrealql/user_events/posts/car_post/relate_car_post_event.surql"),
+    //     include_str!("surrealql/user_events/posts/general.surql"),
+    //     include_str!("surrealql/user_events/booking/listen_create_event.surql")
+    // )
+}
 
 async fn init_important_dirs() -> io::Result<()> {
     let dirs = [
