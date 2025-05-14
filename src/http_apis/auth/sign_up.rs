@@ -36,31 +36,17 @@ pub async fn create_acc(account_info: Json<CreateAccInfo>) -> HttpResponse {
 
     let accinfo = AccountData {
         id: uuid,
-        phone_number: account_info.0.phone_number,
+        email_address: account_info.0.email_address,
         username: account_info.0.username,
         password: account_info.0.password,
-        address: None,
-        is_owner: None,
-        is_driver: None,
-        id_approved: None,
     };
 
     let accinfo2 = accinfo.clone();
 
     let token = tokio::task::spawn_blocking(move || generate_token(accinfo2.into()));
 
-    // let sql = r#"
-    //     LET $is_user_exits = SELECT VALUE phone_number FROM ONLY tb_users WITH INDEX user_phone_number_index WHERE (phone_number IS $accinfo.phone_number) LIMIT 1;
-    //
-    //     IF !$is_user_exits THEN {
-    //         CREATE tb_users SET phone_number = $accinfo.phone_number, username = $accinfo.username, password = crypto::argon2::generate($accinfo.password), is_driver = false, is_owner = false, id_approved = false, address = $accinfo.address;
-    //     } ELSE {
-    //         THROW string::concat("User with phone numer ", $is_user_exits, " is already exists");
-    //     } END;
-    // "#;
-
     let sql = r"
-        CREATE tb_users SET phone_number = $accinfo.phone_number, username = $accinfo.username, password = crypto::argon2::generate($accinfo.password), is_driver = $accinfo.is_driver, is_owner = $accinfo.is_owner, id_approved = $accinfo.id_approved, address = $accinfo.address;
+        CREATE tb_users SET email_address = $accinfo.email_address, username = $accinfo.username, password = crypto::argon2::generate($accinfo.password);
     ";
 
     let Ok(result) = DB.query(sql).bind(("accinfo", accinfo.clone())).await else {

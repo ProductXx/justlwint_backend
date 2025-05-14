@@ -1,11 +1,12 @@
 use serde::{Deserialize, Serialize};
 use surrealdb::RecordId;
 
-// use crate::structures::{forms_structures::FormStatus, general::AccountInfo};
+// use crate::structures::{/*forms_structures::FormStatus,*/ general::AccountInfo};
+use crate::structures::general::AccountInfo;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CreateAccInfo {
-    pub phone_number: String,
+    pub email_address: String,
     pub username: String,
     pub password: String,
 }
@@ -13,7 +14,7 @@ pub struct CreateAccInfo {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct AccountData {
     pub id: String,
-    pub phone_number: String,
+    pub email_address: String,
     pub username: String,
     pub password: String,
     // pub address: Option<String>,
@@ -26,7 +27,7 @@ impl From<AccountData> for AccountInfo {
     fn from(val: AccountData) -> Self {
         Self {
             id: RecordId::from_table_key("tb_users", val.id),
-            phone_number: val.phone_number,
+            email_address: val.email_address,
             username: val.username,
             password: val.password,
             // address: val.address,
