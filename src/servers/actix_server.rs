@@ -3,7 +3,7 @@ use std::io;
 use actix_cors::Cors;
 use actix_files as afs;
 use actix_multipart::form::tempfile::TempFileConfig;
-use actix_web::{App, HttpServer, Responder, get};
+use actix_web::{App, HttpServer};
 
 use crate::{
     http_apis::{
@@ -39,7 +39,7 @@ pub async fn actix_services() -> io::Result<()> {
             // .service(booking_scope())
             .service(test_fn)
             .service(token_test)
-            .service(swagger_file_serve)
+        // .service(swagger_file_serve)
     })
     .bind_auto_h2c(&*HOST_ADDR)?
     .bind_uds(&*UDS_PATH)?
@@ -47,7 +47,7 @@ pub async fn actix_services() -> io::Result<()> {
     .await
 }
 
-#[get("/api-docs/openapi.yml")]
-pub async fn swagger_file_serve() -> impl Responder {
-    include_str!("/home/walker/rust/project/kargate_backend/openapi-v2.yml")
-}
+// #[get("/api-docs/openapi.yml")]
+// pub async fn swagger_file_serve() -> impl Responder {
+//     include_str!("/home/walker/rust/project/kargate_backend/openapi-v2.yml")
+// }
