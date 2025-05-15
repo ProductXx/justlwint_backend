@@ -3,7 +3,7 @@ use actix_web::{HttpResponse, get, web::Path};
 use crate::structures::{post_structures::NewFeedStruct, static_vars::DB};
 
 #[get("/user/{uid}")]
-pub async fn get_newfeed_posts(uid: Path<String>) -> HttpResponse {
+pub async fn get_user_profile(uid: Path<String>) -> HttpResponse {
     let surql = "SELECT * FROM type::thing($uid) LIMIT 50;";
 
     let mut resul = DB
