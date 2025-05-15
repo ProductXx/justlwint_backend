@@ -1,3 +1,3 @@
 pub mod auth;
-pub mod post_related;
+pub mod fetch;
 pub mod utils;

@@ -8,6 +8,7 @@ use actix_web::{App, HttpServer};
 use crate::{
     http_apis::{
         auth::{login::token_test, scope::auth_scope},
+        fetch::scope::fetch_scope,
         // booking::scope::booking_scope,
         // driver_drive::scope::driver_drive_scope,
         // fetch_with_id::scope::fetch_with_id_scope,
@@ -29,6 +30,7 @@ pub async fn actix_services() -> io::Result<()> {
             .app_data(TempFileConfig::default().directory(&*TEMP_FILE_PATH))
             .service(afs::Files::new("/pics", &*POST_PICS_PATH))
             .service(auth_scope())
+            .service(fetch_scope())
             // .service(forms_scope())
             // .service(post_scope())
             // .service(driver_drive_scope())
