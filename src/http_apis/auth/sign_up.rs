@@ -12,6 +12,7 @@ use tracing::error;
 
 use crate::{
     // http_apis::utils::token::generate_token,
+    http_apis::utils::token::generate_token,
     structures::{
         auth_structures::sign_up_structures::{AccountData, CreateAccInfo},
         static_vars::{DB, SMTP_PASSWD, SMTP_RELAY_ADDR, SMTP_USERNAME},
@@ -45,9 +46,9 @@ pub async fn create_acc(account_info: Json<CreateAccInfo>) -> HttpResponse {
         password: account_info.0.password,
     };
 
-    // let accinfo2 = accinfo.clone();
+    let accinfo2 = accinfo.clone();
 
-    // let token = tokio::task::spawn_blocking(move || generate_token(accinfo2.into()));
+    let token_check1 = tokio::task::spawn_blocking(move || generate_token(accinfo2.into()));
     let otp = random_range(100_000..1_000_000);
 
     // let surql_cusr = "SELECT * FROM tb_users WHERE (id IS type::thing($uid) OR email_address IS type::string($email_address));";
@@ -69,14 +70,31 @@ pub async fn create_acc(account_info: Json<CreateAccInfo>) -> HttpResponse {
         return HttpResponse::NotAcceptable().json("Username already exists");
     }
 
+    let token_check2 = match token_check1.await {
+        Ok(token) => token,
+        Err(shits) => {
+            error!("{shits:?}");
+            return HttpResponse::InternalServerError().finish();
+        }
+    };
+
+    let token = match token_check2 {
+        Ok(token) => token,
+        Err(shits) => {
+            error!("{shits:?}");
+            return HttpResponse::InternalServerError().finish();
+        }
+    };
+
     let sql = r#"
-        UPSERT type::thing("tb_users_verify", $accinfo.id) SET, email_address = $accinfo.email_address, username = $accinfo.username, password = crypto::argon2::generate($accinfo.password), otp = $otp_code, exp = time::now() + 10m;
+        UPSERT type::thing("tb_users_verify", $accinfo.id) SET, email_address = $accinfo.email_address, username = $accinfo.username, password = crypto::argon2::generate($accinfo.password), otp = $otp_code, exp = time::now() + 10m, token = $token;
     "#;
 
     let Ok(result) = DB
         .query(sql)
         .bind(("accinfo", accinfo.clone()))
         .bind(("otp_code", otp))
+        .bind(("token", token))
         .await
     else {
         return HttpResponse::InternalServerError().finish();

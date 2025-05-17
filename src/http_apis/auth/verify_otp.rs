@@ -3,12 +3,19 @@ use actix_web::{
     web::{Json, Path},
 };
 use serde::{Deserialize, Serialize};
+use surrealdb::{Error, error::Api};
+use tracing::error;
 
 use crate::structures::static_vars::DB;
 
 #[derive(Serialize, Deserialize)]
 struct OtpReq {
     pub otp_code: String,
+}
+
+#[derive(Serialize, Deserialize)]
+struct VReturn {
+    token: String,
 }
 
 #[put("/verify/{uid}")]
@@ -33,17 +40,44 @@ pub async fn verify_otp(uid: Path<String>, otp_code: Json<OtpReq>) -> HttpRespon
 
             DELETE $user.id;
 
-            RETURN user_acc_content;
+            LET $user_token_content = {
+                token: $user.token
+            };
+
+            RETURN user_token_content;
         }
 
         COMMIT;
     "#;
 
-    let resul = DB
+    let Ok(resul) = DB
         .query(surql)
         .bind(("uid", uid.into_inner()))
         .bind(("otp_code", otp_code.otp_code.clone()))
         .await
-        .unwrap();
-    todo!()
+    else {
+        return HttpResponse::InternalServerError().finish();
+    };
+
+    match resul.check() {
+        Ok(mut resp) => {
+            let vtoken = resp.take::<Option<VReturn>>(0).unwrap().unwrap();
+
+            HttpResponse::Ok().json(vtoken.token)
+        }
+        Err(Error::Api(Api::Query(shits))) => HttpResponse::BadRequest().json(shits),
+        Err(shits) => {
+            error!("{shits:?}");
+            HttpResponse::InternalServerError().finish()
+        }
+    }
+
+    // if let Err(Error::Api(Api::Query(shits))) = check_result {}
+    //
+    // if let Err(shits) = check_result {
+    //     error!("{shits:?}");
+    //     return HttpResponse::InternalServerError().finish();
+    // }
+    //
+    // todo!()
 }
