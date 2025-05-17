@@ -70,7 +70,7 @@ pub async fn create_acc(account_info: Json<CreateAccInfo>) -> HttpResponse {
     }
 
     let sql = r#"
-        UPSERT type::thing("tb_users_verify", $accinfo.id) SET, email_address = $accinfo.email_address, username = $accinfo.username, password = crypto::argon2::generate($accinfo.password), opt = $otp_code, exp = time::now() + 10m;
+        UPSERT type::thing("tb_users_verify", $accinfo.id) SET, email_address = $accinfo.email_address, username = $accinfo.username, password = crypto::argon2::generate($accinfo.password), otp = $otp_code, exp = time::now() + 10m;
     "#;
 
     let Ok(result) = DB
@@ -137,7 +137,7 @@ pub async fn create_acc(account_info: Json<CreateAccInfo>) -> HttpResponse {
         .build();
 
     match smtp_relay.send(&email) {
-        Ok(_) => HttpResponse::Ok().json(format!("/verify/{}", accinfo.username)),
+        Ok(_) => HttpResponse::Ok().json(format!("/auth/verify/{}", accinfo.username)),
         Err(shits) => {
             error!("{shits:?}");
             HttpResponse::InternalServerError().finish()
