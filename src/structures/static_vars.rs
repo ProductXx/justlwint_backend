@@ -2,7 +2,7 @@ use std::sync::LazyLock;
 
 use surrealdb::{Surreal, engine::remote::ws::Client};
 
-pub static ADMIN_DOMAIN: LazyLock<String> = LazyLock::new(|| dotenvy::var("ADMIN_DOMAIN").unwrap());
+// pub static ADMIN_DOMAIN: LazyLock<String> = LazyLock::new(|| dotenvy::var("ADMIN_DOMAIN").unwrap());
 #[allow(dead_code)]
 pub static CLIENT_DOMAIN: LazyLock<String> =
     LazyLock::new(|| dotenvy::var("CLIENT_DOMAIN").unwrap());
@@ -26,3 +26,9 @@ pub static POST_PICS_PATH: LazyLock<String> =
     LazyLock::new(|| format!("{}/post_pics", &*DATA_PATH));
 pub static DB_BACKUP_PATH: LazyLock<String> =
     LazyLock::new(|| format!("{}/database_backup", &*DATA_PATH));
+
+pub static SMTP_USERNAME: LazyLock<String> =
+    LazyLock::new(|| dotenvy::var("SMTP_USERNAME").unwrap());
+pub static SMTP_PASSWD: LazyLock<String> = LazyLock::new(|| dotenvy::var("SMTP_PASSWD").unwrap());
+pub static SMTP_RELAY_ADDR: LazyLock<String> =
+    LazyLock::new(|| dotenvy::var("SMTP_RELAY_ADDR").unwrap());

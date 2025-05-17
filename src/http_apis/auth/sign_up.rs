@@ -1,30 +1,34 @@
 use actix_web::{HttpResponse, post, web::Json};
+use lettre::{
+    Message, SmtpTransport, Transport, message::header::ContentType,
+    transport::smtp::authentication::Credentials,
+};
 // use argon2::{Config, hash_encoded};
-use rand::{Rng, rng};
-use serde_json::json;
-use surrealdb::{Error, error::Api};
+use rand::random_range;
+// use serde_json::json;
+use surrealdb::{Error, RecordId, error::Api};
 use tracing::error;
-use uuid::Uuid;
+// use uuid::Uuid;
 
 use crate::{
-    http_apis::utils::token::generate_token,
+    // http_apis::utils::token::generate_token,
     structures::{
         auth_structures::sign_up_structures::{AccountData, CreateAccInfo},
-        static_vars::DB,
+        static_vars::{DB, SMTP_PASSWD, SMTP_RELAY_ADDR, SMTP_USERNAME},
     },
 };
 
-pub fn generate_random_salt(min_len: usize, max_len: usize) -> Vec<u8> {
-    let mut rng = rng();
-    let len = rng.random_range(min_len..=max_len);
-    let mut salt = vec![0u8; len];
-    rng.fill(&mut salt[..]);
-    salt
-}
+// pub fn generate_random_salt(min_len: usize, max_len: usize) -> Vec<u8> {
+//     let mut rng = rng();
+//     let len = rng.random_range(min_len..=max_len);
+//     let mut salt = vec![0u8; len];
+//     rng.fill(&mut salt[..]);
+//     salt
+// }
 
 #[post("/create_acc")]
 pub async fn create_acc(account_info: Json<CreateAccInfo>) -> HttpResponse {
-    let uuid = Uuid::new_v4().simple().to_string();
+    // let uuid = Uuid::new_v4().simple().to_string();
 
     // let mv_passwd = account_info.password.clone();
     //
@@ -35,21 +39,46 @@ pub async fn create_acc(account_info: Json<CreateAccInfo>) -> HttpResponse {
     // });
 
     let accinfo = AccountData {
-        id: uuid,
+        id: account_info.0.username.clone(),
         email_address: account_info.0.email_address,
         username: account_info.0.username,
         password: account_info.0.password,
     };
 
-    let accinfo2 = accinfo.clone();
+    // let accinfo2 = accinfo.clone();
 
-    let token = tokio::task::spawn_blocking(move || generate_token(accinfo2.into()));
+    // let token = tokio::task::spawn_blocking(move || generate_token(accinfo2.into()));
+    let otp = random_range(100_000..1_000_000);
 
-    let sql = r"
-        CREATE tb_users SET email_address = $accinfo.email_address, username = $accinfo.username, password = crypto::argon2::generate($accinfo.password);
-    ";
+    // let surql_cusr = "SELECT * FROM tb_users WHERE (id IS type::thing($uid) OR email_address IS type::string($email_address));";
 
-    let Ok(result) = DB.query(sql).bind(("accinfo", accinfo.clone())).await else {
+    // let surql_cusr = r#"
+    //     IF $uid.username {
+    //        THROW "Username already exists";
+    //     } ELSE {
+    //
+    //     }
+    // "#;
+
+    let vsel = DB
+        .select::<Option<AccountData>>(RecordId::from_table_key("tb_users", &accinfo.username))
+        .await
+        .unwrap();
+
+    if vsel.is_some() {
+        return HttpResponse::NotAcceptable().json("Username already exists");
+    }
+
+    let sql = r#"
+        UPSERT type::thing("tb_users_verify", $accinfo.id) SET, email_address = $accinfo.email_address, username = $accinfo.username, password = crypto::argon2::generate($accinfo.password), opt = $otp_code, exp = time::now() + 10m;
+    "#;
+
+    let Ok(result) = DB
+        .query(sql)
+        .bind(("accinfo", accinfo.clone()))
+        .bind(("otp_code", otp))
+        .await
+    else {
         return HttpResponse::InternalServerError().finish();
     };
 
@@ -64,22 +93,51 @@ pub async fn create_acc(account_info: Json<CreateAccInfo>) -> HttpResponse {
         return HttpResponse::InternalServerError().finish();
     }
 
-    let token_result = token.await.map_err(|shits| {
-        error!("{shits:?}");
-    });
+    // let token_result = token.await.map_err(|shits| {
+    //     error!("{shits:?}");
+    // });
+    //
+    // let Ok(token) = token_result else {
+    //     return HttpResponse::InternalServerError().finish();
+    // };
 
-    let Ok(token) = token_result else {
-        return HttpResponse::InternalServerError().finish();
-    };
+    // match token {
+    //     Ok(token) => {
+    //         // let sign_up_body = json!({
+    //         //     "token": token,
+    //         //     "user_info": accinfo
+    //         // });
+    //         // HttpResponse::Ok().json(sign_up_body)
+    //
+    //     }
+    //     Err(shits) => {
+    //         error!("{shits:?}");
+    //         HttpResponse::InternalServerError().finish()
+    //     }
+    // }
+    let email = Message::builder()
+        .from("Verify <verify@justlwint.com>".parse().unwrap())
+        .to(
+            format!("{} <{}>", accinfo.username, accinfo.email_address.trim())
+                .parse()
+                .unwrap(),
+        )
+        .subject("Verify Code for Justlwint")
+        .header(ContentType::TEXT_PLAIN)
+        .body(format!(
+            "Your otp code for Justlwint account verification is {otp}"
+        ))
+        .unwrap();
 
-    match token {
-        Ok(token) => {
-            let sign_up_body = json!({
-                "token": token,
-                "user_info": accinfo
-            });
-            HttpResponse::Ok().json(sign_up_body)
-        }
+    let creds = Credentials::new(SMTP_USERNAME.to_owned(), SMTP_PASSWD.to_owned());
+
+    let smtp_relay = SmtpTransport::relay(&SMTP_RELAY_ADDR)
+        .unwrap()
+        .credentials(creds)
+        .build();
+
+    match smtp_relay.send(&email) {
+        Ok(_) => HttpResponse::Ok().json(format!("/verify/{}", accinfo.username)),
         Err(shits) => {
             error!("{shits:?}");
             HttpResponse::InternalServerError().finish()
