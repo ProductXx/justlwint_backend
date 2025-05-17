@@ -62,7 +62,6 @@ pub async fn verify_otp(uid: Path<String>, otp_code: Json<OtpReq>) -> HttpRespon
     match resul.check() {
         Ok(mut resp) => {
             let vtoken = resp.take::<Option<VReturn>>(0).unwrap().unwrap();
-
             HttpResponse::Ok().json(vtoken.token)
         }
         Err(Error::Api(Api::Query(shits))) => HttpResponse::BadRequest().json(shits),
