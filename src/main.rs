@@ -84,7 +84,7 @@ async fn main() -> io::Result<()> {
     .await
     .unwrap();
 
-    DB.use_ns("fuckkk").use_db("kargate").await.unwrap();
+    DB.use_ns("fuckkk").use_db("justlwint").await.unwrap();
 
     DB.query(surql_queries()).await.unwrap();
 

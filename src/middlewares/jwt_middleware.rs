@@ -58,6 +58,7 @@ where
             trie.insert("/test", true);
             trie.insert("/swagger-ui", true);
             trie.insert("/api-docs", true);
+            trie.insert("/fetch", true);
 
             // Step 2: Check if the request path has a matching stored prefix
             if trie.get_ancestor(req.path()).is_some() {
