@@ -1,4 +1,4 @@
-use actix_web::{HttpResponse, post, web::Json};
+use actix_web::{HttpResponse, post, rt, web::Json};
 use lettre::{
     Message, SmtpTransport, Transport, message::header::ContentType,
     transport::smtp::authentication::Credentials,
@@ -87,18 +87,16 @@ pub async fn create_acc(account_info: Json<CreateAccInfo>) -> HttpResponse {
     };
 
     let sql = r#"
-        UPSERT type::thing("tb_users_verify", $accinfo.id) SET, email_address = $accinfo.email_address, username = $accinfo.username, password = crypto::argon2::generate($accinfo.password), otp = $otp_code, exp = time::now() + 10m, token = $token;
+        UPSERT type::thing("tb_users_verify", $accinfo.id) SET email_address = $accinfo.email_address, username = $accinfo.username, password = crypto::argon2::generate($accinfo.password), otp_code = $otp_code, exp = time::now() + 10m, jwt_token = $jwt_token;
     "#;
 
-    let Ok(result) = DB
+    let result = DB
         .query(sql)
         .bind(("accinfo", accinfo.clone()))
         .bind(("otp_code", otp))
-        .bind(("token", token))
+        .bind(("jwt_token", token))
         .await
-    else {
-        return HttpResponse::InternalServerError().finish();
-    };
+        .unwrap();
 
     let check_result = result.check();
 
@@ -110,6 +108,12 @@ pub async fn create_acc(account_info: Json<CreateAccInfo>) -> HttpResponse {
         error!("{shits:?}");
         return HttpResponse::InternalServerError().finish();
     }
+
+    let accinfo2 = accinfo.clone();
+
+    rt::task::spawn_blocking(move || send_email(&accinfo2, otp));
+
+    HttpResponse::Ok().json(format!("/auth/verify/{}", accinfo.username))
 
     // let token_result = token.await.map_err(|shits| {
     //     error!("{shits:?}");
@@ -133,6 +137,9 @@ pub async fn create_acc(account_info: Json<CreateAccInfo>) -> HttpResponse {
     //         HttpResponse::InternalServerError().finish()
     //     }
     // }
+}
+
+fn send_email(accinfo: &AccountData, otp: i32) {
     let email = Message::builder()
         .from("Verify <verify@justlwint.com>".parse().unwrap())
         .to(
@@ -155,10 +162,9 @@ pub async fn create_acc(account_info: Json<CreateAccInfo>) -> HttpResponse {
         .build();
 
     match smtp_relay.send(&email) {
-        Ok(_) => HttpResponse::Ok().json(format!("/auth/verify/{}", accinfo.username)),
+        Ok(_) => {}
         Err(shits) => {
             error!("{shits:?}");
-            HttpResponse::InternalServerError().finish()
         }
     }
 }

@@ -15,7 +15,7 @@ struct OtpReq {
 
 #[derive(Serialize, Deserialize)]
 struct VReturn {
-    token: String,
+    jwt_token: String,
 }
 
 #[put("/verify/{uid}")]
@@ -23,46 +23,45 @@ pub async fn verify_otp(uid: Path<String>, otp_code: Json<OtpReq>) -> HttpRespon
     let surql = r#"
         BEGIN;
 
-        LET $user = SELECT * FROM type::thing("tb_users_verify", $uid);
+        LET $user = SELECT * FROM ONLY type::thing("tb_users_verify", $uid);
+        
+        #RETURN $user;
 
         IF !$user.username {
             THROW "Sorry there is no otp for requested username";
         } ELSE IF $user.exp < ( time::now() - 10m ) {
             THROW "Sorry the otp code is expired and will be remove";
-        } ELSE IF type::string($user.otp) IS $otp_code {
+        } ELSE IF type::string($user.otp_code) IS $otp_code {
             LET $user_acc_content = {
                 email_address: $user.email_address,
                 username: $user.username,
                 password: $user.password,
             };
 
-            CREATE type::thing("tb_users", $user.id.id) CONTENT user_acc_content;
-
-            DELETE $user.id;
+            CREATE type::thing("tb_users", $user.id.id) CONTENT $user_acc_content;
 
             LET $user_token_content = {
-                token: $user.token
+                jwt_token: $user.jwt_token,
             };
 
-            RETURN user_token_content;
-        }
+            DELETE $user.id;
+            RETURN $user;
+        };
 
         COMMIT;
     "#;
 
-    let Ok(resul) = DB
+    let resul = DB
         .query(surql)
         .bind(("uid", uid.into_inner()))
         .bind(("otp_code", otp_code.otp_code.clone()))
         .await
-    else {
-        return HttpResponse::InternalServerError().finish();
-    };
+        .unwrap();
 
     match resul.check() {
         Ok(mut resp) => {
             let vtoken = resp.take::<Option<VReturn>>(0).unwrap().unwrap();
-            HttpResponse::Ok().json(vtoken.token)
+            HttpResponse::Ok().json(vtoken.jwt_token)
         }
         Err(Error::Api(Api::Query(shits))) => HttpResponse::BadRequest().json(shits),
         Err(shits) => {
